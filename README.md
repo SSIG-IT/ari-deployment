@@ -61,12 +61,14 @@ Name: e.g. rb-ari-prod
 
 Type: PowerShell (use the Runtime Environment you created)
 
-Paste this script:
+Paste this script and adjust Tenant ID and Storage Account as needed:
 
 Import-Module AzureResourceInventory
 
 Invoke-ARI -TenantID "<YOUR_TENANT_ID>" -Automation -SkipDiagram -SkipAPIs -StorageAccount "stariprodCompany" -StorageContainer "reports"
-# Adjust Tenant ID and Storage Account as needed
+
 Save and publish the runbook.
 
 Create a schedule to run monthly (e.g., last day, 07:00 AM).
+
+
