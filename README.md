@@ -125,7 +125,7 @@ Go to your Automation Account, open the Overview page (left menu), and enable "T
 Without this, you will not be able to add PowerShell 7.x runtimes!
 
 In the Automation Account:
-Go to Runtime environments and create a new Runtime Environment (e.g., PowerShell 7.4).
+Go to Runtime environments and create a new Runtime Environment rt-ari-prod (e.g., PowerShell 7.4).
 
 Import the following modules from the Gallery:
 
