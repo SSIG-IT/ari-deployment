@@ -118,6 +118,12 @@ Assign Storage Blob Data Contributor on the Storage Account to both your Automat
 Make sure to adjust the parameters inside the script as needed.
 
 # Step 6: Configure PowerShell Runtime & Import Modules
+
+Important:
+Before you can create custom PowerShell runtime environments, you must activate the "Test Run Environment" feature in your Automation Account.
+Go to your Automation Account, open the Overview page (left menu), and enable "Test Run Environment" ("Laufzeitumgebungsoberfläche testen") at the top if it is not already enabled.
+Without this, you will not be able to add PowerShell 7.x runtimes!
+
 In the Automation Account:
 Go to Runtime environments and create a new Runtime Environment (e.g., PowerShell 7.4).
 
