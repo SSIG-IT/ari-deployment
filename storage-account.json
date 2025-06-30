@@ -3,7 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "storageAccounts_stariprod22_name": {
-            "defaultValue": "stariprod22",
+            "defaultValue": "stariprod(Firmenname)",
             "type": "String"
         }
     },
