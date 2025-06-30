@@ -3,19 +3,19 @@
 # Step 1: Deploy Storage Account
 Deploy the Storage Account using the button below
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https://raw.githubusercontent.com/DEIN-GITHUB-ORG/ari-deploy-templates/main/templates/storage-account.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https://raw.githubusercontent.com/SSIG-IT/ari-deployment/refs/heads/main/storage-account.json)
 
 
 # Step 2: Deploy Automation Account
 Deploy the Automation Account using the button below:
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https://raw.githubusercontent.com/DEIN-GITHUB-ORG/ari-deploy-templates/main/templates/automation-account.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https://raw.githubusercontent.com/SSIG-IT/ari-deployment/refs/heads/main/automation-account.json)
 
 
 # Step 3: Deploy Logic App
 Deploy the Logic App using the button below:
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https://raw.githubusercontent.com/DEIN-GITHUB-ORG/ari-deploy-templates/main/templates/logic-app.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https://raw.githubusercontent.com/SSIG-IT/ari-deployment/refs/heads/main/logic-app.json)
 
 
 # Step 4: Assign Required Roles
