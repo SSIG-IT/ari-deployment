@@ -25,7 +25,6 @@ Deploy the Logic App using the button below:
 
 # step 4: Configure the Logic App Workflow
 After deploying the Logic App ARM template, you need to manually configure the workflow to connect it to your Storage Account and email action.
-Below are the exact steps with your data and screenshots as reference.
 
 1. Add the Trigger: When a blob is added or modified (properties only) (V2)
 Search for "When a blob is added or modified (properties only) (V2)" in the Logic App designer and add it as the first trigger.
@@ -56,6 +55,23 @@ Set to Yes (default).
 
 
 Example: Blob = reports/@{triggerBody()?['Name']}
+
+Set Managed Identity Connections
+After deploying the Logic App Design, follow these steps to finalize the workflow configuration:
+
+For both the trigger and the first action (typically "When a blob is added or modified (properties only)" and "Get blob content (V2)"):
+
+Click on the connection field.
+
+Click "Add new connection".
+
+Set Authentication Type to "Logic Apps Managed Identity".
+
+Important: Use the same connection for both steps!
+
+Save the workflow after updating both connections.
+
+Note: Only after saving the workflow with the Managed Identity connection, the Managed Identity will be visible in Azure and you can assign the necessary permissions to the Storage Account.
 
 3. Add the Action: Send an email (V2)
 Click the "+" sign below your previous action and search for "Send an email (V2)" (from the Outlook/Office 365 connector).
