@@ -12,6 +12,9 @@ Deploy the Automation Account using the button below:
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSSIG-IT%2Fari-deployment%2Fmain%2Fautomation-account.json)
 
+Make sure Microsoft.Web and Microsoft.Logic are registered in your subscription before you deploy!
+
+
 
 
 # Step 3: Deploy Logic App
@@ -20,8 +23,73 @@ Deploy the Logic App using the button below:
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSSIG-IT%2Fari-deployment%2Fmain%2Flogic-app.json)
 
 
+# step 4: Configure the Logic App Workflow
+After deploying the Logic App ARM template, you need to manually configure the workflow to connect it to your Storage Account and email action.
+Below are the exact steps with your data and screenshots as reference.
 
-# Step 4: Assign Required Roles
+1. Add the Trigger: When a blob is added or modified (properties only) (V2)
+Search for "When a blob is added or modified (properties only) (V2)" in the Logic App designer and add it as the first trigger.
+
+Storage Account Name or Blob Endpoint:
+Enter your storage account prefix (e.g. stariprod).
+
+Tip: You can use the account name, not the full endpoint.
+
+Container:
+Enter /reports (including the slash).
+
+
+Example: Storage Account = stariprod, Container = /reports
+
+2. Add the Action: Get blob content (V2)
+Click the "+" sign below your trigger and search for "Get blob content (V2)".
+
+Storage Account Name or Blob Endpoint:
+Enter the same storage account (e.g. stariprod).
+
+Blob:
+Enter: reports/@{triggerBody()?['Name']}
+In the designer, select reports/ and then insert the dynamic value List of Files Name from the previous trigger.
+
+Infer Content Type:
+Set to Yes (default).
+
+
+Example: Blob = reports/@{triggerBody()?['Name']}
+
+3. Add the Action: Send an email (V2)
+Click the "+" sign below your previous action and search for "Send an email (V2)" (from the Outlook/Office 365 connector).
+
+To:
+email eingeben
+
+Subject:
+ARI Monatlicher Report - @{formatDateTime(utcNow(),'yyyy-MM')}
+
+Body:
+
+Hallo,
+
+im Anhang finden Sie den monatlichen ARI Report für @{formatDateTime(utcNow(),'yyyy-MM')}
+
+Bei Fragen oder Rückmeldungen stehen wir Ihnen gerne zur Verfügung.
+
+Viele Grüße
+SSIG-IT Team
+Attachments:
+
+Click "Add new parameter" and check "Attachments".
+Enter:
+
+[
+  {
+    "Name": "@{triggerBody()?['Name']}",
+    "ContentBytes": "@{body('Get_blob_content_(V2)')}"
+  }
+]
+
+
+# Step 5: Assign Required Roles
 After deployment, you must assign the required roles so that the Automation Account and Logic App can access the Storage Account.
 
 Simply use the script setRolle.ps1 to automatically assign all roles.
@@ -33,7 +101,7 @@ Assign Storage Blob Data Contributor on the Storage Account to both your Automat
 
 Make sure to adjust the parameters inside the script as needed.
 
-# Step 5: Configure PowerShell Runtime & Import Modules
+# Step 6: Configure PowerShell Runtime & Import Modules
 In the Automation Account:
 Go to Runtime environments and create a new Runtime Environment (e.g., PowerShell 7.4).
 
@@ -57,7 +125,7 @@ Microsoft.PowerShell.ThreadJob
 
 (Optional: Az.CostManagement if you use -IncludeCosts)
 
-# Step 6: Create and Configure PowerShell Runbook
+# Step 7: Create and Configure PowerShell Runbook
 In the Automation Account, go to Runbooks → Create new runbook:
 
 Name: e.g. rb-ari-prod
