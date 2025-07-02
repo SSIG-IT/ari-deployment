@@ -1,167 +1,167 @@
+
 # ARI / Azure Resource Inventory – Deployment Guide
 
-# Step 1: Deploy Storage Account
-Deploy the Storage Account using the button below
+---
+
+## 🧱 Schritt 1: Storage Account bereitstellen
+
+Deploye den Storage Account über folgenden Button:
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSSIG-IT%2Fari-deployment%2Fmain%2Fstorage-account.json)
 
+---
 
+## ⚙️ Schritt 2: Automation Account bereitstellen
 
-# Step 2: Deploy Automation Account
-Deploy the Automation Account using the button below:
+Deploye den Automation Account über folgenden Button:
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSSIG-IT%2Fari-deployment%2Fmain%2Fautomation-account.json)
 
-Make sure Microsoft.Web and Microsoft.Logic are registered in your subscription before you deploy!
+> **Hinweis:** Stelle sicher, dass folgende Ressourcenprovider in der Subscription **registriert** sind:
+> - `Microsoft.Web`
+> - `Microsoft.Logic`
 
+---
 
+## 🔁 Schritt 3: Logic App bereitstellen
 
-
-# Step 3: Deploy Logic App
-Deploy the Logic App using the button below:
+Deploye die Logic App über folgenden Button:
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSSIG-IT%2Fari-deployment%2Fmain%2Flogic-app.json)
 
+---
 
-# step 4: Configure the Logic App Workflow
-After deploying the Logic App ARM template, you need to manually configure the workflow to connect it to your Storage Account and email action.
+## 🧩 Schritt 4: Logic App Workflow konfigurieren
 
-1. Add the Trigger: When a blob is added or modified (properties only) (V2)
-Search for "When a blob is added or modified (properties only) (V2)" in the Logic App designer and add it as the first trigger.
+### 1. Trigger hinzufügen  
+**When a blob is added or modified (properties only) (V2)**
 
-Storage Account Name or Blob Endpoint:
-Enter your storage account prefix (e.g. stariprod).
+- **Storage Account Name:** z. B. `stariprod`
+- **Container:** `/reports`
 
-Tip: You can use the account name, not the full endpoint.
+---
 
-Container:
-Enter /reports (including the slash).
+### 2. Aktion hinzufügen  
+**Get blob content (V2)**
 
+- **Storage Account Name:** z. B. `stariprod`
+- **Blob:** `reports/@{triggerBody()?['Name']}`
+- **Infer Content Type:** `Yes` (Standardwert)
 
-Example: Storage Account = stariprod, Container = /reports
+---
 
-2. Add the Action: Get blob content (V2)
-Click the "+" sign below your trigger and search for "Get blob content (V2)".
+### 3. Managed Identity Verbindung einrichten
 
-Storage Account Name or Blob Endpoint:
-Enter the same storage account (e.g. stariprod).
+- Auf Verbindung klicken (bei Trigger & Aktion)
+- „Add new connection“ → Typ: `Logic Apps Managed Identity`
+- **Gleiche Verbindung** für beide verwenden
+- **Workflow speichern**
 
-Blob:
-Enter: reports/@{triggerBody()?['Name']}
-In the designer, select reports/ and then insert the dynamic value List of Files Name from the previous trigger.
+> ⚠️ Erst nach dem Speichern wird die Managed Identity in Azure sichtbar und kann Berechtigungen erhalten.
 
-Infer Content Type:
-Set to Yes (default).
+---
 
+### 4. Aktion hinzufügen  
+**Send an email (V2)**
 
-Example: Blob = reports/@{triggerBody()?['Name']}
+- **To:** E-Mail-Adresse des Empfängers
+- **Subject:**
+  ```
+  ARI Monatlicher Report - @{formatDateTime(utcNow(),'yyyy-MM')}
+  ```
 
-Set Managed Identity Connections
-After deploying the Logic App Design, follow these steps to finalize the workflow configuration:
+- **Body:**
+  ```
+  Hallo,
 
-For both the trigger and the first action (typically "When a blob is added or modified (properties only)" and "Get blob content (V2)"):
+  im Anhang finden Sie den monatlichen ARI Report für @{formatDateTime(utcNow(),'yyyy-MM')}.
 
-Click on the connection field.
+  Bei Fragen oder Rückmeldungen stehen wir Ihnen gerne zur Verfügung.
 
-Click "Add new connection".
+  Viele Grüße  
+  SSIG-IT Team
+  ```
 
-Set Authentication Type to "Logic Apps Managed Identity".
+- **Attachments hinzufügen:**
+  - Klicke auf „Add new parameter“
+  - Aktiviere „Attachments“
+  - Trage folgendes ein:
+    ```json
+    [
+      {
+        "Name": "@{triggerBody()?['Name']}",
+        "ContentBytes": "@{body('Get_blob_content_(V2)')}"
+      }
+    ]
+    ```
 
-Important: Use the same connection for both steps!
+---
 
-Save the workflow after updating both connections.
+## 🛡️ Schritt 5: Rollen zuweisen
 
-Note: Only after saving the workflow with the Managed Identity connection, the Managed Identity will be visible in Azure and you can assign the necessary permissions to the Storage Account.
+Führe das Script `setRolle.ps1` aus, um die folgenden Berechtigungen zu setzen:
 
-3. Add the Action: Send an email (V2)
-Click the "+" sign below your previous action and search for "Send an email (V2)" (from the Outlook/Office 365 connector).
+- **Reader** auf Subscription-Ebene → für Automation Account
+- **Storage Blob Data Contributor** auf Storage Account → für Automation Account und Logic App
 
-To:
-email eingeben
+> 🛠️ Passe die Parameter im Script ggf. an
 
-Subject:
-ARI Monatlicher Report - @{formatDateTime(utcNow(),'yyyy-MM')}
+---
 
-Body:
+## 🧪 Schritt 6: PowerShell Runtime & Module konfigurieren
 
-Hallo,
+### Voraussetzungen
 
-im Anhang finden Sie den monatlichen ARI Report für @{formatDateTime(utcNow(),'yyyy-MM')}
+- Aktiviere im Automation Account die Option:  
+  **„Laufzeitumgebungsoberfläche testen“** (oben auf der Übersicht-Seite)
 
-Bei Fragen oder Rückmeldungen stehen wir Ihnen gerne zur Verfügung.
+> Ohne diese Funktion kann PowerShell 7.x nicht eingerichtet werden.
 
-Viele Grüße
-SSIG-IT Team
-Attachments:
+---
 
-Click "Add new parameter" and check "Attachments".
-Enter:
+### Neue Runtime erstellen
 
-[
-  {
-    "Name": "@{triggerBody()?['Name']}",
-    "ContentBytes": "@{body('Get_blob_content_(V2)')}"
-  }
-]
+- **Name:** `rt-ari-prod`
+- **Version:** PowerShell 7.x (z. B. 7.4)
 
+---
 
-# Step 5: Assign Required Roles
-After deployment, you must assign the required roles so that the Automation Account and Logic App can access the Storage Account.
+### Module aus der Gallery importieren
 
-Simply use the script setRolle.ps1 to automatically assign all roles.
+- `AzureResourceInventory`
+- `ImportExcel`
+- `Az.ResourceGraph`
+- `Az.Accounts`
+- `Az.Storage`
+- `Az.Compute`
+- `PowerShellGet`
+- `Microsoft.PowerShell.ThreadJob`
+- *(Optional: `Az.CostManagement` bei Verwendung von `-IncludeCosts`)*
 
+---
 
-Assign Reader at Subscription level to your Automation Account
+## 🧾 Schritt 7: PowerShell Runbook erstellen & konfigurieren
 
-Assign Storage Blob Data Contributor on the Storage Account to both your Automation Account and Logic App
+### Neues Runbook erstellen
 
-Make sure to adjust the parameters inside the script as needed.
+- **Name:** z. B. `rb-ari-prod`
+- **Typ:** PowerShell
+- **Runtime:** `rt-ari-prod`
 
-# Step 6: Configure PowerShell Runtime & Import Modules
+---
 
-Important:
-Before you can create custom PowerShell runtime environments, you must activate the "Test Run Environment" feature in your Automation Account.
-Go to your Automation Account, open the Overview page (left menu), and enable "Test Run Environment" ("Laufzeitumgebungsoberfläche testen") at the top if it is not already enabled.
-Without this, you will not be able to add PowerShell 7.x runtimes!
+### Runbook-Skript einfügen
 
-In the Automation Account:
-Go to Runtime environments and create a new Runtime Environment rt-ari-prod (e.g., PowerShell 7.4).
-
-Import the following modules from the Gallery:
-
-AzureResourceInventory
-
-ImportExcel
-
-Az.ResourceGraph
-
-Az.Accounts
-
-Az.Storage
-
-Az.Compute
-
-PowerShellGet
-
-Microsoft.PowerShell.ThreadJob
-
-(Optional: Az.CostManagement if you use -IncludeCosts)
-
-# Step 7: Create and Configure PowerShell Runbook
-In the Automation Account, go to Runbooks → Create new runbook:
-
-Name: e.g. rb-ari-prod
-
-Type: PowerShell (use the Runtime Environment you created)
-
-Paste this script and adjust Tenant ID and Storage Account as needed:
-
+```powershell
 Import-Module AzureResourceInventory
 
 Invoke-ARI -TenantID "<YOUR_TENANT_ID>" -Automation -SkipDiagram -SkipAPIs -StorageAccount "stariprodCompany" -StorageContainer "reports"
+```
 
-Save and publish the runbook.
+- Anpassen, speichern, veröffentlichen
 
-Create a schedule to run monthly (e.g., last day, 07:00 AM).
+---
 
+### Zeitplan erstellen
 
+- **Beispiel:** monatlich, letzter Tag, 07:00 Uhr
