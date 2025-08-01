@@ -1,76 +1,80 @@
-
 # ARI / Azure Resource Inventory – Deployment Guide
 
 ---
 
 ## 🧱 Schritt 1: Storage Account bereitstellen
 
-Deploye den Storage Account über folgenden Button:
+Deploy über Azure Button:
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSSIG-IT%2Fari-deployment%2Fmain%2Fstorage-account.json)
+
+- Ressourcengruppe: `rg-ari-prod` (neu erstellen)
+- Region: West Europe
+- Name: `stariprod<firmenname>` (z. B. `stariprodmeba`)
+- Bereitstellung abwarten
 
 ---
 
 ## ⚙️ Schritt 2: Automation Account bereitstellen
 
-Deploye den Automation Account über folgenden Button:
+Deploy über Azure Button:
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSSIG-IT%2Fari-deployment%2Fmain%2Fautomation-account.json)
 
-> **Hinweis:** Stelle sicher, dass folgende Ressourcenprovider in der Subscription **registriert** sind:
-> - `Microsoft.Web`
-> - `Microsoft.Logic`
+- Ressourcengruppe: `rg-ari-prod`
+- Region: West Europe
+- Name: `aa-ari-prod`
+
+**Hinweis:** Sicherstellen, dass folgende Ressourcenanbieter registriert sind:
+
+- `Microsoft.Web`
+- `Microsoft.Logic`
 
 ---
 
 ## 🔁 Schritt 3: Logic App bereitstellen
 
-Deploye die Logic App über folgenden Button:
+Deploy über Azure Button:
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSSIG-IT%2Fari-deployment%2Fmain%2Flogic-app.json)
+
+- Ressourcengruppe: `rg-ari-prod`
+- Region: Germany West Central
+- Name: `logic-ari-prod-blobemail`
 
 ---
 
 ## 🧩 Schritt 4: Logic App Workflow konfigurieren
 
-### 1. Trigger hinzufügen  
-**When a blob is added or modified (properties only) (V2)**
+**Logik-App öffnen > Designer starten > Automatisierung erstellen:**
 
-- **Storage Account Name:** z. B. `stariprod`
-- **Container:** `/reports`
+### 1. Trigger: Beim Hinzufügen oder Ändern eines Blobs (V2)
 
----
+- Authentifizierung: Microsoft Entra ID integrated
+- Name/Endpunkt: `stariprod<firmenname>` (z. B. `stariprodmeba`)
+- Container: `reports`
 
-### 2. Aktion hinzufügen  
-**Get blob content (V2)**
+### 2. Aktion: Blobinhalt abrufen (V2)
 
-- **Storage Account Name:** z. B. `stariprod`
-- **Blob:** `reports/@{triggerBody()?['Name']}`
-- **Infer Content Type:** `Yes` (Standardwert)
+- Name/Endpunkt: `stariprod<firmenname>`
+- Blob: `reports/@{triggerBody()?['Name']}`
+- Inhaltstyp erkennen: `Yes`
 
----
+### 3. Managed Identity Verbindung
 
-### 3. Managed Identity Verbindung einrichten
+- Trigger auswählen > Verbindung ändern > verwaltete Identität
+- Verbindung auch bei „Blobinhalt abrufen (V2)“ auswählen
 
-- Auf Verbindung klicken (bei Trigger & Aktion)
-- „Add new connection“ → Typ: `Logic Apps Managed Identity`
-- **Gleiche Verbindung** für beide verwenden
-- **Workflow speichern**
+**Hinweis:** Erst nach Speichern ist die Managed Identity sichtbar.
 
-> ⚠️ Erst nach dem Speichern wird die Managed Identity in Azure sichtbar und kann Berechtigungen erhalten.
+### 4. Aktion: E-Mail senden (V2)
 
----
-
-### 4. Aktion hinzufügen  
-**Send an email (V2)**
-
-- **To:** E-Mail-Adresse des Empfängers
-- **Subject:**
+- An: Empfängeradresse
+- Betreff:
   ```
   ARI Monatlicher Report - @{formatDateTime(utcNow(),'yyyy-MM')}
   ```
-
-- **Body:**
+- Text:
   ```
   Hallo,
 
@@ -82,29 +86,23 @@ Deploye die Logic App über folgenden Button:
   SSIG-IT Team
   ```
 
-- **Attachments hinzufügen:**
-  - Klicke auf „Add new parameter“
-  - Aktiviere „Attachments“
-  - Trage folgendes ein:
-    ```json
-    [
-      {
-        "Name": "@{triggerBody()?['Name']}",
-        "ContentBytes": "@{body('Get_blob_content_(V2)')}"
-      }
-    ]
-    ```
+- Anhänge:
+  ```json
+  [
+    {
+      "Name": "@{triggerBody()?['Name']}",
+      "ContentBytes": "@{body('Get_blob_content_(V2)')}"
+    }
+  ]
+  ```
+
+- Oben links auf "Speichern" klicken
 
 ---
 
 ## 🛡️ Schritt 5: Rollen zuweisen
 
-Führe das Script `setRolle.ps1` aus, um die folgenden Berechtigungen zu setzen:
-
-- **Reader** auf Subscription-Ebene → für Automation Account
-- **Storage Blob Data Contributor** auf Storage Account → für Automation Account und Logic App
-
-> 🛠️ Passe die Parameter im Script ggf. an
+PowerShell-Skript `setRolle.ps1` ausführen (Terminal oben rechts).
 
 ---
 
@@ -112,31 +110,28 @@ Führe das Script `setRolle.ps1` aus, um die folgenden Berechtigungen zu setzen:
 
 ### Voraussetzungen
 
-- Aktiviere im Automation Account die Option:  
-  **„Laufzeitumgebungsoberfläche testen“** (oben auf der Übersicht-Seite)
+- Automation-Konto `aa-ari-prod` öffnen
+- Option „Laufzeitumgebungsoberfläche testen“ aktivieren
 
-> Ohne diese Funktion kann PowerShell 7.x nicht eingerichtet werden.
+### Runtime-Umgebung erstellen
 
----
+- Name: `rt-ari-prod`
+- Sprache: PowerShell
+- Version: 7.4
 
-### Neue Runtime erstellen
+**Module aus der Gallery importieren:**
 
-- **Name:** `rt-ari-prod`
-- **Version:** PowerShell 7.x (z. B. 7.4)
+- AzureResourceInventory  
+- ImportExcel  
+- Az.ResourceGraph  
+- Az.Accounts  
+- Az.Storage  
+- Az.Compute  
+- PowerShellGet  
+- Microsoft.PowerShell.ThreadJob  
+- Az.CostManagement
 
----
-
-### Module aus der Gallery importieren
-
-- `AzureResourceInventory`
-- `ImportExcel`
-- `Az.ResourceGraph`
-- `Az.Accounts`
-- `Az.Storage`
-- `Az.Compute`
-- `PowerShellGet`
-- `Microsoft.PowerShell.ThreadJob`
-- *(Optional: `Az.CostManagement` bei Verwendung von `-IncludeCosts`)*
+> Danach auf "Speichern" klicken
 
 ---
 
@@ -144,24 +139,24 @@ Führe das Script `setRolle.ps1` aus, um die folgenden Berechtigungen zu setzen:
 
 ### Neues Runbook erstellen
 
-- **Name:** z. B. `rb-ari-prod`
-- **Typ:** PowerShell
-- **Runtime:** `rt-ari-prod`
+- Name: `rb-ari-prod`
+- Typ: PowerShell
+- Laufzeit: `rt-ari-prod` auswählen
 
----
+> „Bewerten + Erstellen“ > „Erstellen“ klicken
 
 ### Runbook-Skript einfügen
 
 ```powershell
 Import-Module AzureResourceInventory
 
-Invoke-ARI -TenantID "<YOUR_TENANT_ID>" -Automation -SkipDiagram -SkipAPIs -StorageAccount "stariprodCompany" -StorageContainer "reports"
+Invoke-ARI -TenantID "<DIE_TENANT_ID>" -Automation -SkipDiagram -SkipAPIs -StorageAccount "stariprod<firma>" -StorageContainer "reports"
 ```
 
-- Anpassen, speichern, veröffentlichen
+- Skript speichern und veröffentlichen
 
----
+**Testlauf durchführen, ob Mail zugestellt wird**
 
-### Zeitplan erstellen
+### Zeitplan einrichten
 
-- **Beispiel:** monatlich, letzter Tag, 07:00 Uhr
+- Beispiel: monatlich, letzter Tag, 07:00 Uhr
