@@ -1,6 +1,5 @@
 # ARI / Azure Resource Inventory – Deployment Guide
 
----
 
 ## 🧱 Schritt 1: Storage Account bereitstellen
 
@@ -13,7 +12,6 @@ Deploy über Azure Button:
 - Name: `stariprod<firmenname>` (z. B. `stariprodmeba`)
 - Bereitstellung abwarten
 
----
 
 ## ⚙️ Schritt 2: Automation Account bereitstellen
 
@@ -30,7 +28,6 @@ Deploy über Azure Button:
 - `Microsoft.Web`
 - `Microsoft.Logic`
 
----
 
 ## 🔁 Schritt 3: Logic App bereitstellen
 
@@ -42,7 +39,6 @@ Deploy über Azure Button:
 - Region: Germany West Central
 - Name: `logic-ari-prod-blobemail`
 
----
 
 ## 🧩 Schritt 4: Logic App Workflow konfigurieren
 
@@ -98,13 +94,11 @@ Deploy über Azure Button:
 
 - Oben links auf "Speichern" klicken
 
----
 
 ## 🛡️ Schritt 5: Rollen zuweisen
 
 PowerShell-Skript `setRolle.ps1` ausführen (Terminal oben rechts).
 
----
 
 ## 🧪 Schritt 6: PowerShell Runtime & Module konfigurieren
 
@@ -133,7 +127,6 @@ PowerShell-Skript `setRolle.ps1` ausführen (Terminal oben rechts).
 
 > Danach auf "Speichern" klicken
 
----
 
 ## 🧾 Schritt 7: PowerShell Runbook erstellen & konfigurieren
 
